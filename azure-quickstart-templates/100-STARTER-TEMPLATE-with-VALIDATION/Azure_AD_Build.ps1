@@ -1006,8 +1006,15 @@ Switch -Wildcard ($VMName) {
     }   #end of else (!$?)
 
 
-#Troubleshooting messagesWrite-Verbose "$(Get-Date -f T) - Checking $VMName status"
-Write-Debug "About to check $VMName status" #Get the VM status$VMService = Get-AzureVM -ServiceName $ServicePrefix -Name $VMName -ErrorAction SilentlyContinue        #Check we've got status information    if ($VMService) {
+#Troubleshooting messages
+Write-Verbose "$(Get-Date -f T) - Checking $VMName status"
+Write-Debug "About to check $VMName status" 
+
+#Get the VM status
+$VMService = Get-AzureVM -ServiceName $ServicePrefix -Name $VMName -ErrorAction SilentlyContinue
+    
+    #Check we've got status information
+    if ($VMService) {
 
         #Troubleshooting messages
         Write-Verbose "$(Get-Date -f T) - $VMName status verified"
@@ -1155,7 +1162,9 @@ Param(
       )
 
 #Get the WinRM URI of the host
-$WinRmUri = Get-AzureWinRMUri -ServiceName $ServicePrefix -Name $VMName    #Error handling
+$WinRmUri = Get-AzureWinRMUri -ServiceName $ServicePrefix -Name $VMName
+
+    #Error handling
     if ($WinRmUri) {
 
         #Write details of current subscription to screen
@@ -1380,13 +1389,24 @@ Param(
         #Perform additional actions for our DC
         if ($IsDC) {
 
-            #Troubleshooting messages            Write-Verbose "$(Get-Date -f T) - Creating PS Remoting session on $VMName" 
+            #Troubleshooting messages
+            Write-Verbose "$(Get-Date -f T) - Creating PS Remoting session on $VMName" 
             Write-Debug "About to create PS Remoting session on $VMName" 
-                        #Call Create-VmPsSession function            $DCSession = Create-VmPsSession -Service $ServicePrefix -VMName $VMName -AdminUser $AdminUser -SecurePassword $SecurePassword                                    #Troubleshooting messages            Write-Verbose "$(Get-Date -f T) - Configure additional data drive on $VMName" 
-            Write-Debug "About to configure additional data drive on $VMName"                         #Call Add-DcDataDrive function            Add-DcDataDrive -VMSession $DCSession
+            
+            #Call Create-VmPsSession function
+            $DCSession = Create-VmPsSession -Service $ServicePrefix -VMName $VMName -AdminUser $AdminUser -SecurePassword $SecurePassword
             
             
-            #Troubleshooting messages            Write-Verbose "$(Get-Date -f T) - Configure AD DS binaries on $VMName" 
+            #Troubleshooting messages
+            Write-Verbose "$(Get-Date -f T) - Configure additional data drive on $VMName" 
+            Write-Debug "About to configure additional data drive on $VMName" 
+            
+            #Call Add-DcDataDrive function
+            Add-DcDataDrive -VMSession $DCSession
+            
+            
+            #Troubleshooting messages
+            Write-Verbose "$(Get-Date -f T) - Configure AD DS binaries on $VMName" 
             Write-Debug "About to configure AD DS binaries on $VMName" 
             
             #Now let's install the Active Directory domain services binaries
@@ -1407,7 +1427,8 @@ Param(
                 }   #end of else ($ConfigureBinaries)
             
             
-            #Troubleshooting messages            Write-Verbose "$(Get-Date -f T) - Adding $VMName to $ForestFqdn" 
+            #Troubleshooting messages
+            Write-Verbose "$(Get-Date -f T) - Adding $VMName to $ForestFqdn" 
             Write-Debug "About to add $VMName to $ForestFqdn" 
             
             #Now let's promote the DC
@@ -1445,18 +1466,21 @@ Param(
             }   #end of -ScriptBlock
             
 
-            #Troubleshooting messages            Write-Verbose "$(Get-Date -f T) - Verifying status of $VMName" 
+            #Troubleshooting messages
+            Write-Verbose "$(Get-Date -f T) - Verifying status of $VMName" 
             Write-Debug "About to verify status of $VMName" 
 
             #Get VM status
             $VMStatus = Get-AzureVM -ServiceName $ServicePrefix -Name $VMName -ErrorAction SilentlyContinue
             
-            #Use a while loop to wait until 'ReadyRole' is achieved            While ($VMStatus.InstanceStatus -ne "ReadyRole") {
+            #Use a while loop to wait until 'ReadyRole' is achieved
+            While ($VMStatus.InstanceStatus -ne "ReadyRole") {
             
               #Write progress to verbose, sleep and check again  
               Start-Sleep -Seconds 60
               $VMStatus = Get-AzureVM -ServiceName $ServicePrefix -Name $VMName -ErrorAction SilentlyContinue
-                        }   #end of While ($VMStatus.InstanceStatus -ne "ReadyRole")
+            
+            }   #end of While ($VMStatus.InstanceStatus -ne "ReadyRole")
             
             
             #Troubleshooting messages
@@ -2028,7 +2052,8 @@ Write-Debug "About to configure certificate for PS Remoting access on $ServicePr
 Import-VMWinRmCert -ServicePrefix $ServicePrefix -VMName $VMName
 
 
-#Troubleshooting messagesWrite-Verbose "$(Get-Date -f T) - Creating PS Remoting session on $VMName" 
+#Troubleshooting messages
+Write-Verbose "$(Get-Date -f T) - Creating PS Remoting session on $VMName" 
 Write-Debug "About to create PS Remoting session on $VMName" 
 
 #Convert password to a secure string
@@ -2048,11 +2073,21 @@ $SecurePassword = $AdminPassword | ConvertTo-SecureString -AsPlainText -Force
 
     }   #end of else ($SecurePassword)
 
-#Call Create-VmPsSession function$DCSession = Create-VmPsSession -ServicePrefix $ServicePrefix -VMName $VMName -AdminUser $AdminUser -SecurePassword $SecurePassword#Troubleshooting messagesWrite-Verbose "$(Get-Date -f T) - Configure additional data drive on $VMName" 
-Write-Debug "About to configure additional data drive on $VMName" #Call Add-DcDataDrive functionAdd-DcDataDrive -VMSession $DCSession
+
+#Call Create-VmPsSession function
+$DCSession = Create-VmPsSession -ServicePrefix $ServicePrefix -VMName $VMName -AdminUser $AdminUser -SecurePassword $SecurePassword
 
 
-#Troubleshooting messagesWrite-Verbose "$(Get-Date -f T) - Configure AD DS binaries on $VMName" 
+#Troubleshooting messages
+Write-Verbose "$(Get-Date -f T) - Configure additional data drive on $VMName" 
+Write-Debug "About to configure additional data drive on $VMName" 
+
+#Call Add-DcDataDrive function
+Add-DcDataDrive -VMSession $DCSession
+
+
+#Troubleshooting messages
+Write-Verbose "$(Get-Date -f T) - Configure AD DS binaries on $VMName" 
 Write-Debug "About to configure AD DS binaries on $VMName" 
 
 #Now let's install the Active Directory domain services binaries
@@ -2073,7 +2108,8 @@ $ConfigureBinaries = Invoke-Command -Session $DCSession -ScriptBlock {Install-Wi
     }   #end of else ($ConfigureBinaries)
 
 
-#Troubleshooting messagesWrite-Verbose "$(Get-Date -f T) - Configuring forest $ForestFqdn on $VMName" 
+#Troubleshooting messages
+Write-Verbose "$(Get-Date -f T) - Configuring forest $ForestFqdn on $VMName" 
 Write-Debug "About to configure forest $ForestFqdn on $VMName" 
 
 #Now let's create the forest
@@ -2113,18 +2149,21 @@ Invoke-Command -Session $DCSession -ArgumentList $ForestFqdn,$Domain,$SecurePass
 }   #end of -ScriptBlock
 
 
-#Troubleshooting messagesWrite-Verbose "$(Get-Date -f T) - Verifying status of $VMName" 
+#Troubleshooting messages
+Write-Verbose "$(Get-Date -f T) - Verifying status of $VMName" 
 Write-Debug "About to verify status of $VMName" 
 
 #Get VM status
 $VMStatus = Get-AzureVM -ServiceName $ServicePrefix -Name $VMName -ErrorAction SilentlyContinue
 
-#Use a while loop to wait until 'ReadyRole' is achievedWhile ($VMStatus.InstanceStatus -ne "ReadyRole") {
+#Use a while loop to wait until 'ReadyRole' is achieved
+While ($VMStatus.InstanceStatus -ne "ReadyRole") {
 
   #Write progress to verbose, sleep and check again  
   Start-Sleep -Seconds 60
   $VMStatus = Get-AzureVM -ServiceName $ServicePrefix -Name $VMName -ErrorAction SilentlyContinue
-}   #end of While ($VMStatus.InstanceStatus -ne "ReadyRole")
+
+}   #end of While ($VMStatus.InstanceStatus -ne "ReadyRole")
 
 
 #Troubleshooting messages
